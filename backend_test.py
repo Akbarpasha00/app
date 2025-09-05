@@ -643,7 +643,12 @@ def main():
     # Test sequence
     tests = [
         ("Dashboard Stats", tester.test_dashboard_stats),
-        ("Create Student", tester.test_create_student),
+        ("Create Student with CRT Fields", tester.test_create_student),
+        ("Create Students with Different CRT Statuses", tester.test_create_student_with_different_crt_statuses),
+        ("Dashboard Stats with CRT Fields", tester.test_dashboard_stats_with_crt),
+        ("CRT Fee Status Endpoint", tester.test_crt_fee_status_endpoint),
+        ("CRT Students Endpoint with Filtering", tester.test_crt_students_endpoint),
+        ("Students with Backlogs Endpoint", tester.test_students_with_backlogs_endpoint),
         ("Duplicate Roll Number Validation", tester.test_duplicate_roll_number),
         ("Invalid CGPA Handling", tester.test_invalid_cgpa),
         ("Get All Students", tester.test_get_students),
