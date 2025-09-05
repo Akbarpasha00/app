@@ -1748,6 +1748,8 @@ function App() {
         return <Dashboard />;
       case 'students':
         return <Students />;
+      case 'crt':
+        return <CRTManagement />;
       case 'companies':
         return <Companies />;
       case 'drives':
