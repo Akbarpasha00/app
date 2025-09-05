@@ -54,6 +54,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'students', label: 'Students', icon: Users },
+    { id: 'crt', label: 'CRT Management', icon: CreditCard },
     { id: 'companies', label: 'Companies', icon: Building2 },
     { id: 'drives', label: 'Drives', icon: Calendar },
     { id: 'applications', label: 'Applications', icon: FileText },
