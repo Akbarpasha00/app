@@ -78,17 +78,28 @@ class CampusHireAPITester:
         return success
 
     def test_create_student(self):
-        """Test student creation with validation"""
+        """Test student creation with CRT fields validation"""
         test_student = {
             "name": "John Doe",
             "roll_no": f"CS2024{str(uuid4())[:8]}",
             "branch": "Computer Science",
+            "section": "A",
             "year": 3,
             "cgpa": 8.5,
             "skills": ["Python", "React", "MongoDB"],
             "email": f"john.doe.{str(uuid4())[:8]}@example.com",
             "phone": "+1234567890",
-            "resume_url": "https://example.com/resume.pdf"
+            "resume_url": "https://example.com/resume.pdf",
+            # Academic Information
+            "ssc_percentage": 85.5,
+            "inter_diploma_percentage": 78.2,
+            "backlogs_count": 0,
+            "backlog_status": "not_applicable",
+            "year_of_passing": 2025,
+            # CRT Information
+            "crt_fee_status": "paid",
+            "crt_fee_amount": 15000.0,
+            "crt_receipt_number": "CRT2024001"
         }
         
         success, response = self.run_test(
