@@ -190,8 +190,13 @@ const Students = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', roll_no: '', branch: '', year: 1, cgpa: 0,
-    skills: '', email: '', phone: '', resume_url: ''
+    name: '', roll_no: '', branch: '', section: '', year: 1, cgpa: 0,
+    skills: '', email: '', phone: '', resume_url: '',
+    // Academic Information
+    ssc_percentage: 0, inter_diploma_percentage: 0, backlogs_count: 0,
+    backlog_status: 'not_applicable', year_of_passing: new Date().getFullYear(),
+    // CRT Information
+    crt_fee_status: 'pending', crt_fee_amount: 0, crt_receipt_number: ''
   });
 
   useEffect(() => {
@@ -214,7 +219,12 @@ const Students = () => {
         ...formData,
         skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
         cgpa: parseFloat(formData.cgpa),
-        year: parseInt(formData.year)
+        year: parseInt(formData.year),
+        ssc_percentage: parseFloat(formData.ssc_percentage),
+        inter_diploma_percentage: parseFloat(formData.inter_diploma_percentage),
+        backlogs_count: parseInt(formData.backlogs_count),
+        year_of_passing: parseInt(formData.year_of_passing),
+        crt_fee_amount: parseFloat(formData.crt_fee_amount)
       };
 
       if (editingStudent) {
@@ -228,8 +238,11 @@ const Students = () => {
       setIsDialogOpen(false);
       setEditingStudent(null);
       setFormData({
-        name: '', roll_no: '', branch: '', year: 1, cgpa: 0,
-        skills: '', email: '', phone: '', resume_url: ''
+        name: '', roll_no: '', branch: '', section: '', year: 1, cgpa: 0,
+        skills: '', email: '', phone: '', resume_url: '',
+        ssc_percentage: 0, inter_diploma_percentage: 0, backlogs_count: 0,
+        backlog_status: 'not_applicable', year_of_passing: new Date().getFullYear(),
+        crt_fee_status: 'pending', crt_fee_amount: 0, crt_receipt_number: ''
       });
       fetchStudents();
     } catch (error) {
@@ -258,12 +271,31 @@ const Students = () => {
     }
   };
 
+  const getCRTStatusBadge = (status) => {
+    const statusColors = {
+      'paid': 'bg-green-100 text-green-800',
+      'pending': 'bg-red-100 text-red-800',
+      'partial': 'bg-yellow-100 text-yellow-800',
+      'exempted': 'bg-blue-100 text-blue-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getBacklogStatusBadge = (status) => {
+    const statusColors = {
+      'cleared': 'bg-green-100 text-green-800',
+      'pending': 'bg-red-100 text-red-800',
+      'not_applicable': 'bg-gray-100 text-gray-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-slate-800">Students</h2>
-          <p className="text-slate-600">Manage student registrations</p>
+          <p className="text-slate-600">Manage student registrations with CRT details</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -272,112 +304,241 @@ const Students = () => {
               Add Student
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
               <DialogDescription>
-                {editingStudent ? 'Update student information' : 'Enter student details to register'}
+                {editingStudent ? 'Update student information' : 'Enter comprehensive student details including CRT information'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="roll_no">Roll Number</Label>
-                  <Input
-                    id="roll_no"
-                    value={formData.roll_no}
-                    onChange={(e) => setFormData({...formData, roll_no: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="branch">Branch</Label>
-                  <Input
-                    id="branch"
-                    value={formData.branch}
-                    onChange={(e) => setFormData({...formData, branch: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="year">Year</Label>
-                  <Select value={formData.year.toString()} onValueChange={(value) => setFormData({...formData, year: parseInt(value)})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1st Year</SelectItem>
-                      <SelectItem value="2">2nd Year</SelectItem>
-                      <SelectItem value="3">3rd Year</SelectItem>
-                      <SelectItem value="4">4th Year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="cgpa">CGPA</Label>
-                  <Input
-                    id="cgpa"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="10"
-                    value={formData.cgpa}
-                    onChange={(e) => setFormData({...formData, cgpa: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information */}
               <div>
-                <Label htmlFor="skills">Skills (comma-separated)</Label>
-                <Input
-                  id="skills"
-                  value={formData.skills}
-                  onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                  placeholder="JavaScript, React, Node.js"
-                />
+                <h3 className="text-lg font-semibold text-slate-800 mb-3">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="roll_no">Roll Number *</Label>
+                    <Input
+                      id="roll_no"
+                      value={formData.roll_no}
+                      onChange={(e) => setFormData({...formData, roll_no: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="branch">Branch *</Label>
+                    <Input
+                      id="branch"
+                      value={formData.branch}
+                      onChange={(e) => setFormData({...formData, branch: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="section">Section *</Label>
+                    <Input
+                      id="section"
+                      value={formData.section}
+                      onChange={(e) => setFormData({...formData, section: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Mobile No. *</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Academic Information */}
               <div>
-                <Label htmlFor="resume_url">Resume URL (optional)</Label>
-                <Input
-                  id="resume_url"
-                  type="url"
-                  value={formData.resume_url}
-                  onChange={(e) => setFormData({...formData, resume_url: e.target.value})}
-                  placeholder="https://example.com/resume.pdf"
-                />
+                <h3 className="text-lg font-semibold text-slate-800 mb-3">Academic Information</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="ssc_percentage">SSC % *</Label>
+                    <Input
+                      id="ssc_percentage"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.ssc_percentage}
+                      onChange={(e) => setFormData({...formData, ssc_percentage: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="inter_diploma_percentage">Inter/Diploma % *</Label>
+                    <Input
+                      id="inter_diploma_percentage"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.inter_diploma_percentage}
+                      onChange={(e) => setFormData({...formData, inter_diploma_percentage: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cgpa">B.Tech CGPA *</Label>
+                    <Input
+                      id="cgpa"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="10"
+                      value={formData.cgpa}
+                      onChange={(e) => setFormData({...formData, cgpa: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="backlogs_count">Number of Backlogs</Label>
+                    <Input
+                      id="backlogs_count"
+                      type="number"
+                      min="0"
+                      value={formData.backlogs_count}
+                      onChange={(e) => setFormData({...formData, backlogs_count: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="backlog_status">Backlog Status</Label>
+                    <Select value={formData.backlog_status} onValueChange={(value) => setFormData({...formData, backlog_status: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_applicable">Not Applicable</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="cleared">Cleared</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="year_of_passing">Year of Passing *</Label>
+                    <Input
+                      id="year_of_passing"
+                      type="number"
+                      min="2020"
+                      max="2030"
+                      value={formData.year_of_passing}
+                      onChange={(e) => setFormData({...formData, year_of_passing: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* CRT Information */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  CRT Information
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="crt_fee_status">CRT Fee Status *</Label>
+                    <Select value={formData.crt_fee_status} onValueChange={(value) => setFormData({...formData, crt_fee_status: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="partial">Partial</SelectItem>
+                        <SelectItem value="exempted">Exempted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="crt_fee_amount">CRT Fee Amount (₹) *</Label>
+                    <Input
+                      id="crt_fee_amount"
+                      type="number"
+                      min="0"
+                      value={formData.crt_fee_amount}
+                      onChange={(e) => setFormData({...formData, crt_fee_amount: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="crt_receipt_number">CRT Receipt Number</Label>
+                    <Input
+                      id="crt_receipt_number"
+                      value={formData.crt_receipt_number}
+                      onChange={(e) => setFormData({...formData, crt_receipt_number: e.target.value})}
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-3">Additional Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="year">Current Year</Label>
+                    <Select value={formData.year.toString()} onValueChange={(value) => setFormData({...formData, year: parseInt(value)})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1st Year</SelectItem>
+                        <SelectItem value="2">2nd Year</SelectItem>
+                        <SelectItem value="3">3rd Year</SelectItem>
+                        <SelectItem value="4">4th Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="resume_url">Resume URL</Label>
+                    <Input
+                      id="resume_url"
+                      type="url"
+                      value={formData.resume_url}
+                      onChange={(e) => setFormData({...formData, resume_url: e.target.value})}
+                      placeholder="https://example.com/resume.pdf"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Label htmlFor="skills">Skills (comma-separated)</Label>
+                  <Input
+                    id="skills"
+                    value={formData.skills}
+                    onChange={(e) => setFormData({...formData, skills: e.target.value})}
+                    placeholder="JavaScript, React, Node.js, MongoDB"
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
@@ -396,34 +557,81 @@ const Students = () => {
           <Card key={student.id} className="p-6">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <div className="flex items-center space-x-4 mb-3">
+                <div className="flex items-center space-x-4 mb-4">
                   <div className="bg-blue-100 p-2 rounded-lg">
                     <GraduationCap className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-800">{student.name}</h3>
-                    <p className="text-slate-600">{student.roll_no} • {student.branch}</p>
+                    <p className="text-slate-600">{student.roll_no} • {student.branch} - {student.section}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Badge className={getCRTStatusBadge(student.crt_fee_status)}>
+                      CRT: {student.crt_fee_status.toUpperCase()}
+                    </Badge>
+                    {student.backlogs_count > 0 && (
+                      <Badge className={getBacklogStatusBadge(student.backlog_status)}>
+                        Backlogs: {student.backlogs_count}
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+
+                {/* Academic Information Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
                   <div className="flex items-center space-x-2">
-                    <GraduationCap className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm">Year {student.year}</span>
+                    <BookOpen className="w-4 h-4 text-slate-500" />
+                    <span>SSC: {student.ssc_percentage}%</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4 text-slate-500" />
+                    <span>Inter: {student.inter_diploma_percentage}%</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <BarChart3 className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm">CGPA: {student.cgpa}</span>
+                    <span>CGPA: {student.cgpa}</span>
                   </div>
                   <div className="flex items-center space-x-2">
+                    <GraduationCap className="w-4 h-4 text-slate-500" />
+                    <span>Passing: {student.year_of_passing}</span>
+                  </div>
+                </div>
+
+                {/* Contact Information Row */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
+                  <div className="flex items-center space-x-2">
                     <Mail className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm">{student.email}</span>
+                    <span>{student.email}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm">{student.phone}</span>
+                    <span>{student.phone}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-slate-500" />
+                    <span>Year {student.year}</span>
                   </div>
                 </div>
-                {student.skills.length > 0 && (
+
+                {/* CRT Information Row */}
+                <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <CreditCard className="w-4 h-4 text-blue-600" />
+                      <span>Fee: ₹{student.crt_fee_amount?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Receipt className="w-4 h-4 text-blue-600" />
+                      <span>Receipt: {student.crt_receipt_number || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 text-blue-600" />
+                      <span>Status: {student.crt_fee_status.toUpperCase()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {student.skills && student.skills.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {student.skills.map((skill, index) => (
                       <Badge key={index} variant="secondary">{skill}</Badge>
