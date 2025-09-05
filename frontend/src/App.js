@@ -655,7 +655,291 @@ const Students = () => {
   );
 };
 
-// Companies Component (simplified for brevity)
+// CRT Management Component
+const CRTManagement = () => {
+  const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [feeStatusFilter, setFeeStatusFilter] = useState('all');
+  const [crtStats, setCrtStats] = useState({});
+
+  useEffect(() => {
+    fetchStudents();
+    fetchCRTStats();
+  }, []);
+
+  useEffect(() => {
+    filterStudents();
+  }, [students, feeStatusFilter]);
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get(`${API}/students`);
+      setStudents(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch students');
+    }
+  };
+
+  const fetchCRTStats = async () => {
+    try {
+      const response = await axios.get(`${API}/crt/fee-status`);
+      setCrtStats(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch CRT stats');
+    }
+  };
+
+  const filterStudents = () => {
+    if (feeStatusFilter === 'all') {
+      setFilteredStudents(students);
+    } else {
+      setFilteredStudents(students.filter(student => student.crt_fee_status === feeStatusFilter));
+    }
+  };
+
+  const getCRTStatusBadge = (status) => {
+    const statusColors = {
+      'paid': 'bg-green-100 text-green-800',
+      'pending': 'bg-red-100 text-red-800',
+      'partial': 'bg-yellow-100 text-yellow-800',
+      'exempted': 'bg-blue-100 text-blue-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getBacklogStatusBadge = (status) => {
+    const statusColors = {
+      'cleared': 'bg-green-100 text-green-800',
+      'pending': 'bg-red-100 text-red-800',
+      'not_applicable': 'bg-gray-100 text-gray-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const exportToCSV = () => {
+    const headers = [
+      'Name', 'Roll Number', 'Branch', 'Section', 'Email', 'Mobile No.',
+      'SSC %', 'Inter/Diploma %', 'B.Tech CGPA', 'Backlogs Count', 'Backlog Status',
+      'Year of Passing', 'CRT Fee Status', 'CRT Fee Amount', 'CRT Receipt Number'
+    ];
+    
+    const csvData = filteredStudents.map(student => [
+      student.name,
+      student.roll_no,
+      student.branch,
+      student.section,
+      student.email,
+      student.phone,
+      student.ssc_percentage,
+      student.inter_diploma_percentage,
+      student.cgpa,
+      student.backlogs_count,
+      student.backlog_status,
+      student.year_of_passing,
+      student.crt_fee_status,
+      student.crt_fee_amount,
+      student.crt_receipt_number || ''
+    ]);
+
+    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `crt_students_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">CRT Management</h2>
+          <p className="text-slate-600">Campus Recruitment Training fee and academic tracking</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button onClick={exportToCSV} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* CRT Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4 bg-green-50 border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-green-600 mb-1">Fee Paid</p>
+              <p className="text-2xl font-bold text-green-800">{crtStats.paid || 0}</p>
+            </div>
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+        </Card>
+        <Card className="p-4 bg-red-50 border-red-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-red-600 mb-1">Fee Pending</p>
+              <p className="text-2xl font-bold text-red-800">{crtStats.pending || 0}</p>
+            </div>
+            <XCircle className="w-8 h-8 text-red-600" />
+          </div>
+        </Card>
+        <Card className="p-4 bg-yellow-50 border-yellow-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-yellow-600 mb-1">Partial Payment</p>
+              <p className="text-2xl font-bold text-yellow-800">{crtStats.partial || 0}</p>
+            </div>
+            <Clock className="w-8 h-8 text-yellow-600" />
+          </div>
+        </Card>
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-600 mb-1">Exempted</p>
+              <p className="text-2xl font-bold text-blue-800">{crtStats.exempted || 0}</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-600" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Filter Controls */}
+      <Card className="p-4">
+        <div className="flex items-center space-x-4">
+          <Label htmlFor="fee-status-filter">Filter by CRT Fee Status:</Label>
+          <Select value={feeStatusFilter} onValueChange={setFeeStatusFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Students</SelectItem>
+              <SelectItem value="paid">Fee Paid</SelectItem>
+              <SelectItem value="pending">Fee Pending</SelectItem>
+              <SelectItem value="partial">Partial Payment</SelectItem>
+              <SelectItem value="exempted">Exempted</SelectItem>
+            </SelectContent>
+          </Select>
+          <Badge variant="outline">{filteredStudents.length} students</Badge>
+        </div>
+      </Card>
+
+      {/* Students List with Complete Information */}
+      <div className="grid gap-4">
+        {filteredStudents.map(student => (
+          <Card key={student.id} className="p-6 border-l-4" style={{
+            borderLeftColor: student.crt_fee_status === 'paid' ? '#10b981' : 
+                            student.crt_fee_status === 'pending' ? '#ef4444' :
+                            student.crt_fee_status === 'partial' ? '#f59e0b' : '#3b82f6'
+          }}>
+            <div className="space-y-4">
+              {/* Header Row */}
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <GraduationCap className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-800">{student.name}</h3>
+                    <p className="text-slate-600">{student.roll_no} • {student.branch} - {student.section}</p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Badge className={getCRTStatusBadge(student.crt_fee_status)}>
+                    {student.crt_fee_status.toUpperCase()}
+                  </Badge>
+                  {student.backlogs_count > 0 && (
+                    <Badge className={getBacklogStatusBadge(student.backlog_status)}>
+                      {student.backlogs_count} Backlogs
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Academic Performance Section */}
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-slate-700 mb-3 flex items-center">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Academic Performance
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div className="text-center">
+                    <p className="font-medium text-slate-600">SSC %</p>
+                    <p className="text-lg font-bold text-slate-800">{student.ssc_percentage}%</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium text-slate-600">Inter/Diploma %</p>
+                    <p className="text-lg font-bold text-slate-800">{student.inter_diploma_percentage}%</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium text-slate-600">B.Tech CGPA</p>
+                    <p className="text-lg font-bold text-slate-800">{student.cgpa}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium text-slate-600">Backlogs</p>
+                    <p className="text-lg font-bold text-slate-800">{student.backlogs_count}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium text-slate-600">Passing Year</p>
+                    <p className="text-lg font-bold text-slate-800">{student.year_of_passing}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CRT Fee Information */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-700 mb-3 flex items-center">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  CRT Fee Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-blue-600">Fee Status</p>
+                    <p className="text-lg font-bold text-blue-800">{student.crt_fee_status.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-600">Fee Amount</p>
+                    <p className="text-lg font-bold text-blue-800">₹{student.crt_fee_amount?.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-600">Receipt Number</p>
+                    <p className="text-lg font-bold text-blue-800">{student.crt_receipt_number || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Mail className="w-4 h-4 text-slate-500" />
+                  <span>{student.email}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-slate-500" />
+                  <span>{student.phone}</span>
+                </div>
+              </div>
+
+              {/* Skills */}
+              {student.skills && student.skills.length > 0 && (
+                <div>
+                  <p className="font-medium text-slate-700 mb-2">Skills:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {student.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary">{skill}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
 const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
