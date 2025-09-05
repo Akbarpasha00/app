@@ -500,6 +500,12 @@ def main():
         ("Get Company by ID", tester.test_get_company_by_id),
         ("Create Drive", tester.test_create_drive),
         ("Get All Drives", tester.test_get_drives),
+        ("Update Drive Status", tester.test_drive_status_update),
+        ("Create Application", tester.test_create_application),
+        ("Get All Applications", tester.test_get_applications),
+        ("Update Application Status", tester.test_update_application_status),
+        ("Create Offer Letter", tester.test_create_offer_letter),
+        ("Get All Offer Letters", tester.test_get_offer_letters),
         ("Delete Student", tester.test_delete_student),
         ("Non-existent Student", tester.test_nonexistent_student),
     ]
