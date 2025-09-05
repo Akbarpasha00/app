@@ -62,30 +62,64 @@ def parse_from_mongo(item):
                     pass
     return item
 
+# Enums for new fields
+class BacklogStatus(str, Enum):
+    CLEARED = "cleared"
+    PENDING = "pending"
+    NOT_APPLICABLE = "not_applicable"
+
+class CRTFeeStatus(str, Enum):
+    PAID = "paid"
+    PENDING = "pending"
+    PARTIAL = "partial"
+    EXEMPTED = "exempted"
+
 # Models
 class Student(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     roll_no: str
     branch: str
+    section: str
     year: int
     cgpa: float
     skills: List[str] = []
     email: EmailStr
     phone: str
     resume_url: Optional[str] = None
+    # Academic Information
+    ssc_percentage: float
+    inter_diploma_percentage: float
+    backlogs_count: int = 0
+    backlog_status: BacklogStatus = BacklogStatus.NOT_APPLICABLE
+    year_of_passing: int
+    # CRT Information
+    crt_fee_status: CRTFeeStatus
+    crt_fee_amount: float
+    crt_receipt_number: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StudentCreate(BaseModel):
     name: str
     roll_no: str
     branch: str
+    section: str
     year: int
     cgpa: float
     skills: List[str] = []
     email: EmailStr
     phone: str
     resume_url: Optional[str] = None
+    # Academic Information
+    ssc_percentage: float
+    inter_diploma_percentage: float
+    backlogs_count: int = 0
+    backlog_status: BacklogStatus = BacklogStatus.NOT_APPLICABLE
+    year_of_passing: int
+    # CRT Information
+    crt_fee_status: CRTFeeStatus
+    crt_fee_amount: float
+    crt_receipt_number: Optional[str] = None
 
 class Company(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
