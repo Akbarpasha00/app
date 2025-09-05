@@ -553,6 +553,659 @@ const Companies = () => {
   );
 };
 
+// Drives Component
+const Drives = () => {
+  const [drives, setDrives] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    company_id: '', role: '', job_description: '', ctc: 0,
+    eligibility_criteria: '', drive_date: '', location: ''
+  });
+
+  useEffect(() => {
+    fetchDrives();
+    fetchCompanies();
+  }, []);
+
+  const fetchDrives = async () => {
+    try {
+      const response = await axios.get(`${API}/drives`);
+      setDrives(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch drives');
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(`${API}/companies`);
+      setCompanies(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch companies');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const data = {
+        ...formData,
+        ctc: parseFloat(formData.ctc),
+        drive_date: new Date(formData.drive_date).toISOString()
+      };
+
+      await axios.post(`${API}/drives`, data);
+      toast.success('Drive created successfully');
+      setIsDialogOpen(false);
+      setFormData({
+        company_id: '', role: '', job_description: '', ctc: 0,
+        eligibility_criteria: '', drive_date: '', location: ''
+      });
+      fetchDrives();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Operation failed');
+    }
+  };
+
+  const updateDriveStatus = async (driveId, status) => {
+    try {
+      await axios.put(`${API}/drives/${driveId}/status?status=${status}`);
+      toast.success('Drive status updated successfully');
+      fetchDrives();
+    } catch (error) {
+      toast.error('Failed to update drive status');
+    }
+  };
+
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'upcoming': return 'bg-blue-100 text-blue-800';
+      case 'ongoing': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Campus Drives</h2>
+          <p className="text-slate-600">Manage recruitment drives</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-orange-600 hover:bg-orange-700">
+              <Calendar className="w-4 h-4 mr-2" />
+              Schedule Drive
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Schedule New Drive</DialogTitle>
+              <DialogDescription>Create a new campus recruitment drive</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="company_id">Company</Label>
+                <Select value={formData.company_id} onValueChange={(value) => setFormData({...formData, company_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map(company => (
+                      <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="role">Job Role</Label>
+                  <Input
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({...formData, role: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ctc">CTC (₹)</Label>
+                  <Input
+                    id="ctc"
+                    type="number"
+                    min="0"
+                    value={formData.ctc}
+                    onChange={(e) => setFormData({...formData, ctc: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="job_description">Job Description</Label>
+                <Textarea
+                  id="job_description"
+                  value={formData.job_description}
+                  onChange={(e) => setFormData({...formData, job_description: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="eligibility_criteria">Eligibility Criteria</Label>
+                <Textarea
+                  id="eligibility_criteria"
+                  value={formData.eligibility_criteria}
+                  onChange={(e) => setFormData({...formData, eligibility_criteria: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="drive_date">Drive Date & Time</Label>
+                  <Input
+                    id="drive_date"
+                    type="datetime-local"
+                    value={formData.drive_date}
+                    onChange={(e) => setFormData({...formData, drive_date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+                  Schedule Drive
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-4">
+        {drives.map(drive => (
+          <Card key={drive.id} className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center space-x-4 mb-3">
+                  <div className="bg-orange-100 p-2 rounded-lg">
+                    <Briefcase className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">{drive.role}</h3>
+                    <p className="text-slate-600">{drive.company_name}</p>
+                  </div>
+                  <Badge className={getStatusBadgeColor(drive.status)}>
+                    {drive.status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm">₹{drive.ctc.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm">{new Date(drive.drive_date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm">{new Date(drive.drive_date).toLocaleTimeString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm">{drive.location}</span>
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <h4 className="font-medium text-slate-700 mb-1">Job Description:</h4>
+                  <p className="text-sm text-slate-600">{drive.job_description}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-slate-700 mb-1">Eligibility:</h4>
+                  <p className="text-sm text-slate-600">{drive.eligibility_criteria}</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Select onValueChange={(value) => updateDriveStatus(drive.id, value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Update Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="ongoing">Ongoing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Applications Component
+const Applications = () => {
+  const [applications, setApplications] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [drives, setDrives] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    student_id: '', drive_id: ''
+  });
+
+  useEffect(() => {
+    fetchApplications();
+    fetchStudents();
+    fetchDrives();
+  }, []);
+
+  const fetchApplications = async () => {
+    try {
+      const response = await axios.get(`${API}/applications`);
+      setApplications(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch applications');
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get(`${API}/students`);
+      setStudents(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch students');
+    }
+  };
+
+  const fetchDrives = async () => {
+    try {
+      const response = await axios.get(`${API}/drives`);
+      setDrives(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch drives');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/applications`, formData);
+      toast.success('Application created successfully');
+      setIsDialogOpen(false);
+      setFormData({ student_id: '', drive_id: '' });
+      fetchApplications();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Operation failed');
+    }
+  };
+
+  const updateApplicationStatus = async (applicationId, status) => {
+    try {
+      await axios.put(`${API}/applications/${applicationId}/status`, { status });
+      toast.success('Application status updated successfully');
+      fetchApplications();
+    } catch (error) {
+      toast.error('Failed to update application status');
+    }
+  };
+
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'applied': return 'bg-blue-100 text-blue-800';
+      case 'shortlisted': return 'bg-yellow-100 text-yellow-800';
+      case 'selected': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Applications</h2>
+          <p className="text-slate-600">Manage student applications</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <FileText className="w-4 h-4 mr-2" />
+              New Application
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Application</DialogTitle>
+              <DialogDescription>Apply student to a drive</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="student_id">Student</Label>
+                <Select value={formData.student_id} onValueChange={(value) => setFormData({...formData, student_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map(student => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name} ({student.roll_no})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="drive_id">Drive</Label>
+                <Select value={formData.drive_id} onValueChange={(value) => setFormData({...formData, drive_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select drive" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {drives.map(drive => (
+                      <SelectItem key={drive.id} value={drive.id}>
+                        {drive.company_name} - {drive.role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+                  Create Application
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-4">
+        {applications.map(application => (
+          <Card key={application.id} className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center space-x-4 mb-3">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <FileText className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">{application.student_name}</h3>
+                    <p className="text-slate-600">{application.company_name} - {application.role}</p>
+                  </div>
+                  <Badge className={getStatusBadgeColor(application.application_status)}>
+                    {application.application_status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm text-slate-500">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Applied: {new Date(application.applied_date).toLocaleDateString()}</span>
+                  </div>
+                  {application.selected_date && (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Selected: {new Date(application.selected_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Select onValueChange={(value) => updateApplicationStatus(application.id, value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Update Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="applied">Applied</SelectItem>
+                    <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                    <SelectItem value="selected">Selected</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Offer Letters Component
+const OfferLetters = () => {
+  const [offers, setOffers] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [drives, setDrives] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [viewOfferDialog, setViewOfferDialog] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [formData, setFormData] = useState({
+    student_id: '', drive_id: '', joining_date: '', final_ctc: 0
+  });
+
+  useEffect(() => {
+    fetchOffers();
+    fetchStudents();
+    fetchDrives();
+  }, []);
+
+  const fetchOffers = async () => {
+    try {
+      const response = await axios.get(`${API}/offer-letters`);
+      setOffers(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch offer letters');
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get(`${API}/students`);
+      setStudents(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch students');
+    }
+  };
+
+  const fetchDrives = async () => {
+    try {
+      const response = await axios.get(`${API}/drives`);
+      setDrives(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch drives');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const data = {
+        ...formData,
+        final_ctc: parseFloat(formData.final_ctc),
+        joining_date: new Date(formData.joining_date).toISOString()
+      };
+
+      await axios.post(`${API}/offer-letters`, data);
+      toast.success('Offer letter created successfully');
+      setIsDialogOpen(false);
+      setFormData({ student_id: '', drive_id: '', joining_date: '', final_ctc: 0 });
+      fetchOffers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Operation failed');
+    }
+  };
+
+  const viewOffer = (offer) => {
+    setSelectedOffer(offer);
+    setViewOfferDialog(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Offer Letters</h2>
+          <p className="text-slate-600">Manage placement offer letters</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Download className="w-4 h-4 mr-2" />
+              Generate Offer
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generate Offer Letter</DialogTitle>
+              <DialogDescription>Create offer letter for selected student</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="student_id">Student</Label>
+                <Select value={formData.student_id} onValueChange={(value) => setFormData({...formData, student_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map(student => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name} ({student.roll_no})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="drive_id">Drive</Label>
+                <Select value={formData.drive_id} onValueChange={(value) => setFormData({...formData, drive_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select drive" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {drives.map(drive => (
+                      <SelectItem key={drive.id} value={drive.id}>
+                        {drive.company_name} - {drive.role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="final_ctc">Final CTC (₹)</Label>
+                  <Input
+                    id="final_ctc"
+                    type="number"
+                    min="0"
+                    value={formData.final_ctc}
+                    onChange={(e) => setFormData({...formData, final_ctc: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="joining_date">Joining Date</Label>
+                  <Input
+                    id="joining_date"
+                    type="date"
+                    value={formData.joining_date}
+                    onChange={(e) => setFormData({...formData, joining_date: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                  Generate Offer
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-4">
+        {offers.map(offer => (
+          <Card key={offer.id} className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center space-x-4 mb-3">
+                  <div className="bg-emerald-100 p-2 rounded-lg">
+                    <Download className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">{offer.student_name}</h3>
+                    <p className="text-slate-600">{offer.company_name} - {offer.role}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-500">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="w-4 h-4" />
+                    <span>CTC: ₹{offer.final_ctc.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Offer Date: {new Date(offer.offer_date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Briefcase className="w-4 h-4" />
+                    <span>Joining: {new Date(offer.joining_date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button size="sm" variant="outline" onClick={() => viewOffer(offer)}>
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Button>
+                <Button size="sm" variant="outline">
+                  <Download className="w-4 h-4 mr-1" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* View Offer Dialog */}
+      <Dialog open={viewOfferDialog} onOpenChange={setViewOfferDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Offer Letter</DialogTitle>
+          </DialogHeader>
+          {selectedOffer && (
+            <div className="bg-white p-8 border rounded-lg">
+              <pre className="whitespace-pre-wrap text-sm font-mono">{selectedOffer.letter_content}</pre>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 // Main App Component
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -566,11 +1219,11 @@ function App() {
       case 'companies':
         return <Companies />;
       case 'drives':
-        return <div className="text-center py-12"><p className="text-slate-600">Drives management coming soon...</p></div>;
+        return <Drives />;
       case 'applications':
-        return <div className="text-center py-12"><p className="text-slate-600">Applications management coming soon...</p></div>;
+        return <Applications />;
       case 'offers':
-        return <div className="text-center py-12"><p className="text-slate-600">Offer letters management coming soon...</p></div>;
+        return <OfferLetters />;
       default:
         return <Dashboard />;
     }
