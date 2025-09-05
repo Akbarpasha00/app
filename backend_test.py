@@ -112,10 +112,18 @@ class CampusHireAPITester:
         
         if success and 'id' in response:
             self.created_resources['students'].append(response['id'])
-            # Verify all fields are returned correctly
+            # Verify all fields are returned correctly including CRT fields
+            crt_fields = ['ssc_percentage', 'inter_diploma_percentage', 'backlogs_count', 
+                         'backlog_status', 'year_of_passing', 'crt_fee_status', 
+                         'crt_fee_amount', 'crt_receipt_number']
             for key, value in test_student.items():
                 if key in response and response[key] != value:
                     print(f"❌ Field mismatch - {key}: expected {value}, got {response[key]}")
+                    return False
+            # Verify CRT fields are present
+            for field in crt_fields:
+                if field not in response:
+                    print(f"❌ Missing CRT field: {field}")
                     return False
         return success
 
