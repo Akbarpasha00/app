@@ -115,17 +115,22 @@ const Dashboard = () => {
     { title: 'Active Drives', value: stats.upcoming_drives, icon: Calendar, color: 'bg-orange-500' },
     { title: 'Applications', value: stats.total_applications, icon: FileText, color: 'bg-purple-500' },
     { title: 'Selected Students', value: stats.selected_students, icon: CheckCircle, color: 'bg-emerald-500' },
-    { title: 'Placement Rate', value: `${stats.placement_rate}%`, icon: TrendingUp, color: 'bg-indigo-500' }
+    { title: 'Placement Rate', value: `${stats.placement_rate}%`, icon: TrendingUp, color: 'bg-indigo-500' },
+    // CRT specific stats
+    { title: 'CRT Fee Paid', value: stats.crt_fee_paid, icon: CreditCard, color: 'bg-green-600' },
+    { title: 'CRT Fee Pending', value: stats.crt_fee_pending, icon: AlertCircle, color: 'bg-red-500' },
+    { title: 'CRT Payment Rate', value: `${stats.crt_payment_rate}%`, icon: Receipt, color: 'bg-teal-500' },
+    { title: 'Students with Backlogs', value: stats.students_with_backlogs, icon: BookOpen, color: 'bg-yellow-600' }
   ];
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold text-slate-800 mb-2">Dashboard</h2>
-        <p className="text-slate-600">Overview of placement activities</p>
+        <p className="text-slate-600">Overview of placement activities and CRT management</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -145,6 +150,36 @@ const Dashboard = () => {
           );
         })}
       </div>
+
+      {/* CRT Quick Summary */}
+      <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <CreditCard className="w-5 h-5 text-blue-600" />
+            <span>CRT Management Summary</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.crt_fee_paid || 0}</p>
+              <p className="text-sm text-slate-600">Fee Paid</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{stats.crt_fee_pending || 0}</p>
+              <p className="text-sm text-slate-600">Fee Pending</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-teal-600">{stats.crt_payment_rate || 0}%</p>
+              <p className="text-sm text-slate-600">Payment Rate</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-yellow-600">{stats.students_with_backlogs || 0}</p>
+              <p className="text-sm text-slate-600">With Backlogs</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
