@@ -411,7 +411,7 @@ async def get_offer_letters(student_id: Optional[str] = None):
     offers = await db.offer_letters.find(filter_query).to_list(1000)
     return [OfferLetter(**parse_from_mongo(offer)) for offer in offers]
 
-# Dashboard stats
+# Dashboard stats with CRT information
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats():
     total_students = await db.students.count_documents({})
@@ -421,7 +421,13 @@ async def get_dashboard_stats():
     total_applications = await db.applications.count_documents({})
     selected_applications = await db.applications.count_documents({"application_status": "selected"})
     
+    # CRT specific stats
+    crt_fee_paid = await db.students.count_documents({"crt_fee_status": "paid"})
+    crt_fee_pending = await db.students.count_documents({"crt_fee_status": "pending"})
+    students_with_backlogs = await db.students.count_documents({"backlogs_count": {"$gt": 0}})
+    
     placement_rate = (selected_applications / total_students * 100) if total_students > 0 else 0
+    crt_payment_rate = (crt_fee_paid / total_students * 100) if total_students > 0 else 0
     
     return {
         "total_students": total_students,
@@ -430,8 +436,49 @@ async def get_dashboard_stats():
         "upcoming_drives": upcoming_drives,
         "total_applications": total_applications,
         "selected_students": selected_applications,
-        "placement_rate": round(placement_rate, 1)
+        "placement_rate": round(placement_rate, 1),
+        # CRT specific stats
+        "crt_fee_paid": crt_fee_paid,
+        "crt_fee_pending": crt_fee_pending,
+        "crt_payment_rate": round(crt_payment_rate, 1),
+        "students_with_backlogs": students_with_backlogs
     }
+
+# CRT specific endpoints
+@api_router.get("/crt/fee-status")
+async def get_crt_fee_status():
+    """Get CRT fee status summary"""
+    paid = await db.students.count_documents({"crt_fee_status": "paid"})
+    pending = await db.students.count_documents({"crt_fee_status": "pending"})
+    partial = await db.students.count_documents({"crt_fee_status": "partial"})
+    exempted = await db.students.count_documents({"crt_fee_status": "exempted"})
+    
+    return {
+        "paid": paid,
+        "pending": pending,
+        "partial": partial,
+        "exempted": exempted,
+        "total": paid + pending + partial + exempted
+    }
+
+@api_router.get("/crt/students", response_model=List[Student])
+async def get_crt_students(fee_status: Optional[CRTFeeStatus] = None):
+    """Get students filtered by CRT fee status"""
+    filter_query = {}
+    if fee_status:
+        filter_query["crt_fee_status"] = fee_status
+    
+    students = await db.students.find(filter_query).to_list(1000)
+    return [Student(**parse_from_mongo(student)) for student in students]
+
+@api_router.get("/students/backlogs")
+async def get_students_with_backlogs():
+    """Get students with pending backlogs"""
+    students = await db.students.find({
+        "backlogs_count": {"$gt": 0},
+        "backlog_status": "pending"
+    }).to_list(1000)
+    return [Student(**parse_from_mongo(student)) for student in students]
 
 # Include the router in the main app
 app.include_router(api_router)
