@@ -27,7 +27,11 @@ import {
   GraduationCap,
   Briefcase,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  CreditCard,
+  AlertCircle,
+  BookOpen,
+  Receipt
 } from 'lucide-react';
 
 // Components
