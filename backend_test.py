@@ -361,6 +361,125 @@ class CampusHireAPITester:
         )
         return success
 
+    def test_create_application(self):
+        """Test application creation"""
+        if not self.created_resources['students'] or not self.created_resources['drives']:
+            print("❌ Need students and drives for application test")
+            return False
+            
+        student_id = self.created_resources['students'][0]
+        drive_id = self.created_resources['drives'][0]
+        
+        test_application = {
+            "student_id": student_id,
+            "drive_id": drive_id
+        }
+        
+        success, response = self.run_test(
+            "Create Application",
+            "POST",
+            "applications",
+            200,
+            data=test_application
+        )
+        
+        if success and 'id' in response:
+            self.created_resources.setdefault('applications', []).append(response['id'])
+        return success
+
+    def test_get_applications(self):
+        """Test getting all applications"""
+        success, response = self.run_test(
+            "Get All Applications",
+            "GET",
+            "applications",
+            200
+        )
+        
+        if success:
+            print(f"   Found {len(response)} applications")
+        return success
+
+    def test_update_application_status(self):
+        """Test updating application status"""
+        if not self.created_resources.get('applications'):
+            print("❌ No applications created yet, skipping status update test")
+            return False
+            
+        application_id = self.created_resources['applications'][0]
+        status_update = {"status": "selected"}
+        
+        success, response = self.run_test(
+            "Update Application Status to Selected",
+            "PUT",
+            f"applications/{application_id}/status",
+            200,
+            data=status_update
+        )
+        return success
+
+    def test_create_offer_letter(self):
+        """Test offer letter creation"""
+        if not self.created_resources.get('students') or not self.created_resources.get('drives'):
+            print("❌ Need students and drives for offer letter test")
+            return False
+            
+        student_id = self.created_resources['students'][0]
+        drive_id = self.created_resources['drives'][0]
+        
+        test_offer = {
+            "student_id": student_id,
+            "drive_id": drive_id,
+            "joining_date": "2025-01-15T00:00:00Z",
+            "final_ctc": 1500000.0
+        }
+        
+        success, response = self.run_test(
+            "Create Offer Letter",
+            "POST",
+            "offer-letters",
+            200,
+            data=test_offer
+        )
+        
+        if success and 'id' in response:
+            self.created_resources.setdefault('offers', []).append(response['id'])
+            # Check if letter content is generated
+            if 'letter_content' in response and len(response['letter_content']) > 0:
+                print(f"   ✅ Offer letter content generated successfully")
+            else:
+                print(f"   ❌ Offer letter content not generated")
+        return success
+
+    def test_get_offer_letters(self):
+        """Test getting all offer letters"""
+        success, response = self.run_test(
+            "Get All Offer Letters",
+            "GET",
+            "offer-letters",
+            200
+        )
+        
+        if success:
+            print(f"   Found {len(response)} offer letters")
+        return success
+
+    def test_drive_status_update(self):
+        """Test updating drive status"""
+        if not self.created_resources.get('drives'):
+            print("❌ No drives created yet, skipping status update test")
+            return False
+            
+        drive_id = self.created_resources['drives'][0]
+        
+        success, response = self.run_test(
+            "Update Drive Status to Completed",
+            "PUT",
+            f"drives/{drive_id}/status?status=completed",
+            200
+        )
+        return success
+
 def main():
     print("🚀 Starting CampusHire API Testing...")
     print("=" * 60)
