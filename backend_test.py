@@ -138,11 +138,22 @@ class CampusHireAPITester:
             "name": "Jane Doe",
             "roll_no": "CS2024DUPLICATE",  # This should fail
             "branch": "Computer Science",
+            "section": "A",
             "year": 2,
             "cgpa": 7.5,
             "skills": ["Java"],
             "email": "jane.doe@example.com",
-            "phone": "+1234567891"
+            "phone": "+1234567891",
+            # Academic Information
+            "ssc_percentage": 82.0,
+            "inter_diploma_percentage": 76.5,
+            "backlogs_count": 1,
+            "backlog_status": "pending",
+            "year_of_passing": 2025,
+            # CRT Information
+            "crt_fee_status": "pending",
+            "crt_fee_amount": 15000.0,
+            "crt_receipt_number": None
         }
         
         # First create a student
