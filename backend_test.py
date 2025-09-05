@@ -499,6 +499,141 @@ class CampusHireAPITester:
         )
         return success
 
+    def test_crt_fee_status_endpoint(self):
+        """Test CRT fee status summary endpoint"""
+        success, response = self.run_test(
+            "Get CRT Fee Status Summary",
+            "GET",
+            "crt/fee-status",
+            200
+        )
+        
+        if success:
+            required_fields = ['paid', 'pending', 'partial', 'exempted', 'total']
+            for field in required_fields:
+                if field not in response:
+                    print(f"❌ Missing field in CRT fee status: {field}")
+                    return False
+            print(f"   CRT Fee Status: {response}")
+        return success
+
+    def test_crt_students_endpoint(self):
+        """Test CRT students endpoint with filtering"""
+        # Test getting all CRT students
+        success1, response1 = self.run_test(
+            "Get All CRT Students",
+            "GET",
+            "crt/students",
+            200
+        )
+        
+        if not success1:
+            return False
+            
+        print(f"   Found {len(response1)} CRT students")
+        
+        # Test filtering by fee status
+        success2, response2 = self.run_test(
+            "Get CRT Students - Fee Paid Filter",
+            "GET",
+            "crt/students",
+            200,
+            params={"fee_status": "paid"}
+        )
+        
+        if success2:
+            print(f"   Found {len(response2)} students with paid fees")
+            # Verify all returned students have paid status
+            for student in response2:
+                if student.get('crt_fee_status') != 'paid':
+                    print(f"❌ Filter failed - student {student.get('name')} has status {student.get('crt_fee_status')}")
+                    return False
+        
+        return success1 and success2
+
+    def test_students_with_backlogs_endpoint(self):
+        """Test students with backlogs endpoint"""
+        success, response = self.run_test(
+            "Get Students with Backlogs",
+            "GET",
+            "students/backlogs",
+            200
+        )
+        
+        if success:
+            print(f"   Found {len(response)} students with backlogs")
+            # Verify all returned students have backlogs
+            for student in response:
+                if student.get('backlogs_count', 0) <= 0 or student.get('backlog_status') != 'pending':
+                    print(f"❌ Filter failed - student {student.get('name')} doesn't have pending backlogs")
+                    return False
+        return success
+
+    def test_create_student_with_different_crt_statuses(self):
+        """Test creating students with different CRT fee statuses"""
+        crt_statuses = ['pending', 'partial', 'exempted']
+        
+        for i, status in enumerate(crt_statuses):
+            test_student = {
+                "name": f"Student {status.title()}",
+                "roll_no": f"CS2024{status.upper()}{i}",
+                "branch": "Computer Science",
+                "section": "B",
+                "year": 2,
+                "cgpa": 7.5 + i,
+                "skills": ["Java", "Spring"],
+                "email": f"student.{status}@example.com",
+                "phone": f"+123456789{i}",
+                # Academic Information
+                "ssc_percentage": 80.0 + i,
+                "inter_diploma_percentage": 75.0 + i,
+                "backlogs_count": i,
+                "backlog_status": "pending" if i > 0 else "not_applicable",
+                "year_of_passing": 2025,
+                # CRT Information
+                "crt_fee_status": status,
+                "crt_fee_amount": 15000.0 - (i * 1000),
+                "crt_receipt_number": f"CRT2024{status.upper()}{i:03d}" if status != 'pending' else None
+            }
+            
+            success, response = self.run_test(
+                f"Create Student with CRT Status: {status}",
+                "POST",
+                "students",
+                200,
+                data=test_student
+            )
+            
+            if success and 'id' in response:
+                self.created_resources['students'].append(response['id'])
+                # Verify CRT status is set correctly
+                if response.get('crt_fee_status') != status:
+                    print(f"❌ CRT status mismatch - expected {status}, got {response.get('crt_fee_status')}")
+                    return False
+            else:
+                return False
+        
+        return True
+
+    def test_dashboard_stats_with_crt(self):
+        """Test dashboard statistics with CRT-specific fields"""
+        success, response = self.run_test(
+            "Dashboard Stats with CRT Fields",
+            "GET",
+            "dashboard/stats",
+            200
+        )
+        
+        if success:
+            crt_fields = ['crt_fee_paid', 'crt_fee_pending', 'crt_payment_rate', 'students_with_backlogs']
+            for field in crt_fields:
+                if field not in response:
+                    print(f"❌ Missing CRT field in dashboard stats: {field}")
+                    return False
+            print(f"   CRT Stats - Paid: {response.get('crt_fee_paid')}, Pending: {response.get('crt_fee_pending')}")
+            print(f"   Payment Rate: {response.get('crt_payment_rate')}%, Backlogs: {response.get('students_with_backlogs')}")
+        return success
+
 def main():
     print("🚀 Starting CampusHire API Testing...")
     print("=" * 60)
